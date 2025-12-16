@@ -149,7 +149,7 @@
                 }
                 // デフォルト値を「区間時間」に変更 (8分 + 2分 = 10分)
                 return [
-                    { id: 1, minutes: 8, label: '予鈴', triggered: false },
+                    { id: 1, minutes: 8, label: '予鈴まで', triggered: false },
                     { id: 2, minutes: 2, label: '終了', triggered: false },
                 ];
             });
@@ -411,6 +411,18 @@
                 setCurrentThemeKey(keys[nextIndex]);
             };
 
+            const toggleFullscreen = async () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        await document.documentElement.requestFullscreen();
+                    } else {
+                        await document.exitFullscreen();
+                    }
+                } catch (e) {
+                    console.warn('Fullscreen error:', e);
+                }
+            };
+
             const formatTime = (ms) => {
                 if (isNaN(ms) || ms < 0) return "00:00";
                 const totalSeconds = Math.floor(ms / 1000);
@@ -473,7 +485,10 @@
                                         <button onClick={toggleTheme} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
                                             <Palette className="w-4 h-4 text-white" />
                                         </button>
-                                        <button onClick={() => setViewMode('fullscreen')} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
+                                        <button onClick={() => setViewMode('fullscreen')} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors" title="横向き表示">
+                                            <Settings className="w-4 h-4 text-white" />
+                                        </button>
+                                        <button onClick={toggleFullscreen} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors" title="フルスクリーン">
                                             <Maximize className="w-4 h-4 text-white" />
                                         </button>
                                     </div>
@@ -493,7 +508,10 @@
                                     <button onClick={toggleTheme} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
                                         <Palette className="w-4 h-4 text-white" />
                                     </button>
-                                    <button onClick={() => setViewMode('fullscreen')} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
+                                    <button onClick={() => setViewMode('fullscreen')} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors" title="横向き表示">
+                                        <Settings className="w-4 h-4 text-white" />
+                                    </button>
+                                    <button onClick={toggleFullscreen} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors" title="フルスクリーン">
                                         <Maximize className="w-4 h-4 text-white" />
                                     </button>
                                 </div>
@@ -625,10 +643,10 @@
                         </div>
 
                         <div className="relative z-30 flex-1 flex flex-col items-center justify-center p-8 pointer-events-none">
-                            <div className="text-xl md:text-3xl font-bold mb-2 text-white/90 drop-shadow-md tracking-wider">
+                            <div className="font-bold mb-2 text-white/90 drop-shadow-md tracking-wider" style={{ fontSize: '20vh', lineHeight: '1' }}>
                                 {currentLabel}
                             </div>
-                            <div className="digital-font text-[6rem] md:text-[8rem] lg:text-[10rem] font-black leading-none tabular-nums drop-shadow-2xl text-white">
+                            <div className="digital-font font-black leading-none tabular-nums drop-shadow-2xl text-white" style={{ fontSize: '50vh', lineHeight: '1' }}>
                                 {formatTime(elapsedMs)}
                             </div>
                             {isRunning && nextRemaining > 0 && (
@@ -638,6 +656,17 @@
                             )}
                         </div>
 
+                        {/* 右上：ボタン（全デバイス） */}
+                        <div className="absolute top-6 right-6 z-40 flex items-center gap-3">
+                            <button onClick={() => setViewMode('editor')} className="w-12 h-12 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center backdrop-blur-sm shadow-lg transition-all active:scale-95 pointer-events-auto" title="設定画面">
+                                <Settings className="w-5 h-5" />
+                            </button>
+                            <button onClick={toggleFullscreen} className="w-12 h-12 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center backdrop-blur-sm shadow-lg transition-all active:scale-95 pointer-events-auto" title="フルスクリーン">
+                                <Maximize className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* 左下：操作ボタン（全デバイス） */}
                         <div className="absolute bottom-6 left-6 z-40 flex items-center gap-4">
                             <button onClick={isRunning ? handlePause : handleStart} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm transition-all active:scale-95 pointer-events-auto ${isRunning ? 'bg-amber-500/90 hover:bg-amber-500 text-white' : `${theme.bg} text-white`}`}>
                                 {isRunning ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
@@ -645,7 +674,16 @@
                             {!isRunning && elapsedMs > 0 && (
                                 <button onClick={handleReset} className="w-14 h-14 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center backdrop-blur-sm shadow-lg transition-all active:scale-95 pointer-events-auto"><RotateCcw className="w-6 h-6" /></button>
                             )}
-                            <button onClick={() => setViewMode('editor')} className="w-14 h-14 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center backdrop-blur-sm shadow-lg transition-all active:scale-95 pointer-events-auto ml-2"><Settings className="w-6 h-6" /></button>
+                        </div>
+
+                        {/* スマホ横向き時の操作ボタン（左下） */}
+                        <div className="absolute bottom-6 left-6 z-40 flex sm:hidden items-center gap-4">
+                            <button onClick={isRunning ? handlePause : handleStart} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm transition-all active:scale-95 pointer-events-auto ${isRunning ? 'bg-amber-500/90 hover:bg-amber-500 text-white' : `${theme.bg} text-white`}`}>
+                                {isRunning ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
+                            </button>
+                            {!isRunning && elapsedMs > 0 && (
+                                <button onClick={handleReset} className="w-14 h-14 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center backdrop-blur-sm shadow-lg transition-all active:scale-95 pointer-events-auto"><RotateCcw className="w-6 h-6" /></button>
+                            )}
                         </div>
                     </div>
                 );
